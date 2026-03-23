@@ -1,0 +1,26 @@
+# Core
+requests
+numpy
+sentence-transformers
+sqlite3
+
+# Voice
+whisper
+coqui-tts
+pyaudio
+vlc
+
+# Navigation
+osmnx
+networkx
+
+# Finance
+stripe
+
+# Web server (for mobile app backend)
+flask
+flask-socketio
+eventlet
+
+# Evolution
+unsloth  # optional, for fine-tuning
