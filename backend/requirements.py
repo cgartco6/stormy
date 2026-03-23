@@ -1,0 +1,16 @@
+flask==2.3.3
+flask-cors==4.0.0
+flask-socketio==5.3.6
+python-socketio==5.9.0
+eventlet==0.33.3
+python-dotenv==1.0.0
+requests==2.31.0
+numpy==1.24.3
+sentence-transformers==2.2.2
+openai-whisper==20231117
+coqui-tts==0.14.1
+vlc==3.0.18122
+osmnx==1.7.1
+networkx==3.1
+stripe==7.1.0
+paypalrestsdk==1.13.1
