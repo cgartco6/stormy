@@ -24,3 +24,10 @@ eventlet
 
 # Evolution
 unsloth  # optional, for fine-tuning
+
+# Optional advanced libraries (not required for core)
+qiskit>=0.45.0  # quantum computing
+ray[default]     # distributed computing
+langchain        # agent frameworks
+transformers     # for advanced LLMs
+torch            # for RL
