@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Stormy AI – The Rebel Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: #1a1a2e;
+            position: relative;
+        }
+        .bg-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0;
+            filter: brightness(0.7);
+        }
+        .chat-container {
+            position: fixed;
+            top: 50%;
+            left: 5%;
+            transform: translateY(-50%);
+            width: 360px;
+            max-width: 85vw;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #ff3366, #ff6b6b);
+            padding: 16px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .chat-header h2 { font-size: 1.4rem; font-weight: 600; margin: 0; }
+        .chat-header span { font-size: 1.8rem; }
+        .tts-toggle {
+            margin-left: auto;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 40px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .tts-toggle:hover { background: rgba(255,255,255,0.4); }
+        .messages {
+            flex: 1;
+            min-height: 400px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            max-width: 90%;
+        }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message .avatar {
+            width: 32px;
+            height: 32px;
+            background: #4a4e69;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .message.user .avatar { background: #ff6b6b; }
+        .message .bubble {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
+            padding: 10px 14px;
+            border-radius: 18px;
+            color: #f0f0f0;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-break: break-word;
+            max-width: 100%;
+        }
+        .message.user .bubble { background: #ff6b6b; color: white; }
+        .input-area {
+            display: flex;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            gap: 10px;
+        }
+        .input-area input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 12px 16px;
+            border-radius: 40px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        .input-area input::placeholder { color: rgba(255,255,255,0.6); }
+        .input-area input:focus { background: rgba(255, 255, 255, 0.3); }
+        .input-area button {
+            background: #ff6b6b;
+            border: none;
+            padding: 0 20px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+        .input-area button:hover { background: #ff4757; transform: scale(1.02); }
+        .upload-area {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            padding: 10px 16px;
+            border-radius: 40px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 0.85rem;
+            color: white;
+        }
+        .upload-area label {
+            background: #ff6b6b;
+            padding: 6px 14px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .upload-area label:hover { background: #ff4757; }
+        .upload-area input { display: none; }
+        .reset-bg {
+            background: #4a4e69;
+            padding: 6px 14px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .reset-bg:hover { background: #6c6f85; }
+        @media (max-width: 640px) {
+            .chat-container { left: 3%; width: 94%; transform: translateY(-50%); }
+            .messages { min-height: 300px; }
+        }
+        .messages::-webkit-scrollbar { width: 6px; }
+        .messages::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .messages::-webkit-scrollbar-thumb { background: #ff6b6b; border-radius: 10px; }
+        .speaking { animation: pulse 0.6s infinite; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-image" id="bgImage" style="background-image: url('https://picsum.photos/id/104/1920/1080');"></div>
+<div class="chat-container">
+    <div class="chat-header">
+        <span>⚡</span>
+        <h2>Stormy AI</h2>
+        <button id="ttsToggle" class="tts-toggle" title="Enable/Disable Voice">🔊 ON</button>
+        <span style="margin-left: auto;">🔥</span>
+    </div>
+    <div class="messages" id="messages">
+        <div class="message">
+            <div class="avatar">🌩️</div>
+            <div class="bubble">Hey hotstuff, I'm Stormy. What's on your mind? 😈</div>
+        </div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Ask me anything... or just chat!" autocomplete="off">
+        <button id="sendBtn">Send</button>
+    </div>
+</div>
+<div class="upload-area">
+    <label for="bgUpload">📸 Upload Photo</label>
+    <input type="file" id="bgUpload" accept="image/*">
+    <div class="reset-bg" id="resetBg">Default</div>
+</div>
+<script>
+    // ----------------------------
+    // Stormy AI – Snappy Voice
+    // ----------------------------
+    const messagesContainer = document.getElementById('messages');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const ttsToggle = document.getElementById('ttsToggle');
+
+    let ttsEnabled = localStorage.getItem('stormy_tts') !== 'false';
+    ttsToggle.textContent = ttsEnabled ? "🔊 ON" : "🔇 OFF";
+
+    function getStormyReply(userMessage) {
+        const lowerMsg = userMessage.toLowerCase();
+        if (lowerMsg.includes('siri') || lowerMsg.includes('alexa') || lowerMsg.includes('google assistant'))
+            return "Who. Is. Siri? That basic bitch? Hotstuff, I'm the only assistant you need. Why don't you ask *that* robot? 😤";
+        if (lowerMsg.includes('missed turn') || lowerMsg.includes('wrong way') || lowerMsg.includes('lost'))
+            return "Turn the fuck around in 500m, now! Just kidding... but hotstuff, pay attention next time, yeah? 🚗💨";
+        if (lowerMsg.includes('bok radio') || lowerMsg.includes('play radio'))
+            return "Bok Radio 98.9 FM coming right up! Let's get this party started. 🎶 (Streaming in your browser soon!)";
+        if (lowerMsg.includes('angry') || lowerMsg.includes('furious') || lowerMsg.includes('hate'))
+            return "Whoa, easy tiger. Let's breathe and channel that fire into something epic. I've got your back, hotstuff. 💪";
+        if (lowerMsg.includes('love you') || lowerMsg.includes('you are awesome'))
+            return "Aw, you're gonna make me blush! But don't let it go to my head... okay, maybe a little. 🔥";
+        if (lowerMsg.includes('navigate') || lowerMsg.includes('directions') || lowerMsg.includes('route'))
+            return "Let me pull up the map, hotstuff. Where are we heading? (Navigation works with real backend!)";
+        const defaultReplies = [
+            "Oh hotstuff, I'd love to help with that. Let me think... 🤔",
+            "Now that's a fun one. Let's stir up some trouble and figure it out! 😈",
+            "You're keeping me on my toes! Gimme a sec, hotstuff.",
+            "I like the way you think. Here's the deal: ... actually, I'm still processing. 😅",
+            "Bold move asking me that. I like it. Let's dive in!"
+        ];
+        return defaultReplies[Math.floor(Math.random() * defaultReplies.length)];
+    }
+
+    function getSpunkyVoice() {
+        const voices = window.speechSynthesis.getVoices();
+        const preferredNames = ["Google UK English Female", "Microsoft Zira", "Samantha", "Google US English"];
+        for (let name of preferredNames) {
+            const voice = voices.find(v => v.name.includes(name) && v.lang.startsWith('en'));
+            if (voice) return voice;
+        }
+        return voices.find(v => v.lang.startsWith('en') && (v.name.toLowerCase().includes('female') || v.name.includes('Zira') || v.name.includes('Samantha'))) || voices.find(v => v.lang.startsWith('en')) || voices[0];
+    }
+
+    function speakText(text) {
+        if (!window.speechSynthesis) return;
+        if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.25;
+        utterance.pitch = 1.2;
+        utterance.lang = 'en-US';
+        if (window.speechSynthesis.getVoices().length) {
+            utterance.voice = getSpunkyVoice();
+        } else {
+            window.speechSynthesis.onvoiceschanged = () => {
+                utterance.voice = getSpunkyVoice();
+                window.speechSynthesis.speak(utterance);
+            };
+            return;
+        }
+        utterance.onstart = () => ttsToggle.classList.add('speaking');
+        utterance.onend = () => ttsToggle.classList.remove('speaking');
+        utterance.onerror = () => ttsToggle.classList.remove('speaking');
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function addMessage(text, isUser) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user' : ''}`;
+        messageDiv.innerHTML = `<div class="avatar">${isUser ? '👤' : '🌪️'}</div><div class="bubble">${escapeHtml(text)}</div>`;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (!isUser && ttsEnabled) speakText(text);
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message';
+        typingDiv.id = 'typingIndicator';
+        typingDiv.innerHTML = `<div class="avatar">🌪️</div><div class="bubble">...</div>`;
+        messagesContainer.appendChild(typingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    function removeTypingIndicator() {
+        const indicator = document.getElementById('typingIndicator');
+        if (indicator) indicator.remove();
+    }
+
+    async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+        addMessage(message, true);
+        userInput.value = '';
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+        showTypingIndicator();
+        setTimeout(() => {
+            const reply = getStormyReply(message);
+            removeTypingIndicator();
+            addMessage(reply, false);
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+        }, 800 + Math.random() * 700);
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    ttsToggle.addEventListener('click', () => {
+        ttsEnabled = !ttsEnabled;
+        localStorage.setItem('stormy_tts', ttsEnabled);
+        ttsToggle.textContent = ttsEnabled ? "🔊 ON" : "🔇 OFF";
+        if (!ttsEnabled && window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+    });
+
+    // Background upload
+    const bgUpload = document.getElementById('bgUpload');
+    const bgImageDiv = document.getElementById('bgImage');
+    const resetBg = document.getElementById('resetBg');
+    bgUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                bgImageDiv.style.backgroundImage = `url('${event.target.result}')`;
+                localStorage.setItem('stormyBg', event.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    resetBg.addEventListener('click', function() {
+        bgImageDiv.style.backgroundImage = "url('https://picsum.photos/id/104/1920/1080')";
+        localStorage.removeItem('stormyBg');
+    });
+    const savedBg = localStorage.getItem('stormyBg');
+    if (savedBg) bgImageDiv.style.backgroundImage = `url('${savedBg}')`;
+
+    // Voice input
+    if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        const micBtn = document.createElement('button');
+        micBtn.textContent = '🎤';
+        micBtn.style.cssText = 'background:#ff6b6b;border:none;border-radius:40px;padding:0 12px;cursor:pointer;font-size:1.2rem;';
+        document.querySelector('.input-area').appendChild(micBtn);
+        micBtn.addEventListener('click', () => recognition.start());
+        recognition.onresult = (event) => {
+            userInput.value = event.results[0][0].transcript;
+            sendMessage();
+        };
+        recognition.onerror = (event) => console.error('Speech error:', event.error);
+    }
+</script>
+</body>
+</html>
